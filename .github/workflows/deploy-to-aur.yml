@@ -24,7 +24,7 @@ jobs:
           ENV_GIT_USER_NAME: 'Israel Roldan'
           ENV_PACKAGE_ARCHITECTURES: 'x86_64'
           ENV_PACKAGE_DEPENDENCIES: '|  bash|  pacman|  grep|  sed|  coreutils|  sudo|'
-          ENV_PACKAGE_DESCRIPTION: 'Command-line tool that finds all the optional packages of the packages that were pointed by you. It has different options to filter. Beyond that, you can install the packages you pointed to the dependencies and the optional packages you found and filtered.'
+          ENV_PACKAGE_DESCRIPTION: 'Command-line tool that finds all the optional packages of the packages that were pointed by you. It can install the packages.'
           ENV_PACKAGE_INFORMATION: '# Maintainer: Israel Roldan <israel.alberto.rv@gmail.com>|# Contributor: Israel Roldan <israel.alberto.rv@gmail.com>'
           ENV_PACKAGE_LICENSES: 'GPL3'
           ENV_PACKAGE_NAME: 'optional-packages'
