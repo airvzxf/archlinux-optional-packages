@@ -17,6 +17,7 @@ validpgpkeys=(ENV_PACKAGE_PGPS)
 package() {
   cd "${srcdir}/AUTO_SOURCE_DOWNLOADED" || return
   install -Dm644 README.md "${pkgdir}/usr/share/doc/ENV_PACKAGE_NAME/README.md"
+  install -Dm644 TODO.md "${pkgdir}/usr/share/doc/ENV_PACKAGE_NAME/TODO.md"
 
   cd "src" || return
   install -Dm755 "ENV_PACKAGE_NAME" "${pkgdir}/usr/bin/ENV_PACKAGE_NAME"
