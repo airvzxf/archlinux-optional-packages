@@ -1,0 +1,353 @@
+#!/usr/bin/env bash
+set +xve
+
+VERSION="v1.0.0"
+INSTALL="no"
+SKIP_INSTALLED="no"
+declare -a CORE_PACKAGES=()
+declare -a OPTIONAL_PACKAGES=()
+declare -a PACKAGES_EXCLUDED=()
+
+display_help() {
+  echo ""
+  echo "USAGE:"
+  echo "  optional-packages [OPTIONS] <PACKAGE-1> <PACKAGE-2> <…>"
+  echo ""
+  echo "DESCRIPTION"
+  echo "  Command-line tool that finds all the optional packages of the packages that"
+  echo "  were pointed by you. It has different options to filter these packets."
+  echo "  Beyond that, you can install the packages you pointed to the dependencies and"
+  echo "  the optional packages you found and filtered."
+  echo ""
+  echo "ARGS:"
+  echo "  The name of the packages separate by spaces."
+  echo "  <PACKAGE-1> <PACKAGE-2> <…>"
+  echo ""
+  echo "OPTIONS:"
+  echo "  ┌──────┬──────────────────┬──────────────────────────────────────────────────┐"
+  echo "  │ Abbr │       Long       │                     Information                  │"
+  echo "  ╞══════╪══════════════════╪══════════════════════════════════════════════════╡"
+  echo "  │  -e  │ --exclude        │ Excludes packages mentioned during a deep search.│"
+  echo "  │      │                  │   - Required: no                                 │"
+  echo "  │      │                  │   - Type:     string                             │"
+  echo "  │      │                  │   - Values:   package-1 package-2 …              │"
+  echo "  │      │                  │   - Default:  none                               │"
+  echo "  ├──────┼──────────────────┼──────────────────────────────────────────────────┤"
+  echo "  │  -h  │ --help           │ Display information for this command and exit.   │"
+  echo "  │      │                  │   - Required: no                                 │"
+  echo "  │      │                  │   - Type:     none                               │"
+  echo "  │      │                  │   - Values:   none                               │"
+  echo "  │      │                  │   - Default:  none                               │"
+  echo "  ├──────┼──────────────────┼──────────────────────────────────────────────────┤"
+  echo "  │  -i  │ --install        │ Install all the packages found.                  │"
+  echo "  │      │                  │   - Required: no                                 │"
+  echo "  │      │                  │   - Type:     boolean                            │"
+  echo "  │      │                  │   - Values:   yes or no                          │"
+  echo "  │      │                  │   - Default:  no                                 │"
+  echo "  ├──────┼──────────────────┼──────────────────────────────────────────────────┤"
+  echo "  │  -p  │ --packages       │ The core packages from which to start the search │"
+  echo "  │      │                  │ for optional packages.                           │"
+  echo "  │      │                  │   - Required: no                                 │"
+  echo "  │      │                  │   - Type:     string                             │"
+  echo "  │      │                  │   - Values:   package-1 package-2 …              │"
+  echo "  │      │                  │   - Default:  none                               │"
+  echo "  ├──────┼──────────────────┼──────────────────────────────────────────────────┤"
+  echo "  │  -s  │ --skip-installed │ Skip the installed packages.                     │"
+  echo "  │      │                  │   - Required: no                                 │"
+  echo "  │      │                  │   - Type:     boolean                            │"
+  echo "  │      │                  │   - Values:   yes or no                          │"
+  echo "  │      │                  │   - Default:  no                                 │"
+  echo "  ├──────┼──────────────────┼──────────────────────────────────────────────────┤"
+  echo "  │  -V  │ --version        │ Display the version of this tool along with the  │"
+  echo "  │      │                  │ project information and exit.                    │"
+  echo "  │      │                  │   - Required: no                                 │"
+  echo "  │      │                  │   - Type:     none                               │"
+  echo "  │      │                  │   - Values:   none                               │"
+  echo "  │      │                  │   - Default:  none                               │"
+  echo "  ├──────┼──────────────────┼──────────────────────────────────────────────────┤"
+  echo "  │      │ --version-simple │ Display the version of this tool and exit.       │"
+  echo "  │      │                  │   - Required: no                                 │"
+  echo "  │      │                  │   - Type:     none                               │"
+  echo "  │      │                  │   - Values:   none                               │"
+  echo "  │      │                  │   - Default:  none                               │"
+  echo "  └──────┴──────────────────┴──────────────────────────────────────────────────┘"
+  echo ""
+  echo "  Note: Multiple values are separated by spaces."
+  echo ""
+  echo "EXAMPLES:"
+  echo "  - Search for three packages."
+  echo "    - Commands:"
+  echo "        optional-packages bash lsd rust"
+  echo "        optional-packages -p bash lsd rust"
+  echo "        optional-packages --packages bash lsd rust"
+  echo ""
+  echo "  - Search for a package, but exclude some optional packages."
+  echo "    - Commands:"
+  echo "        optional-packages -p kitty -e imagemagick python-pygments"
+  echo "        optional-packages -packages kitty -exclude imagemagick python-pygments"
+  echo ""
+  echo "  - Install the core packages and any additional packages found."
+  echo "    - Commands:"
+  echo "        optional-packages -p lsd -i yes"
+  echo "        optional-packages -packages lsd --install yes"
+  echo ""
+  echo "  - Search for optional packages, just for any core packages or optional"
+  echo "    packages that are not installed."
+  echo "    - In this case, 'lsd' is already installed, it will not look for any"
+  echo "      optional dependencies because it is already installed."
+  echo "    - Otherwise, if the value of this option is 'no' (the default value), then"
+  echo "      it would look for dependencies on the 'lsd' package or any package."
+  echo "    - Commands:"
+  echo "        optional-packages -p lsd -s yes"
+  echo "        optional-packages -packages lsd --skip-installed yes"
+  echo ""
+  echo "  - All words at the end of the command are considered core packages. In this"
+  echo "    example are 'bash lsd rust'."
+  echo "    - Commands:"
+  echo "        optional-packages bash lsd rust"
+  echo "        optional-packages --install yes bash lsd rust"
+  echo "        optional-packages --exclude bat --install yes bash lsd rust"
+  echo "    - Warning: if your last option is 'exclude', all words at the end count as"
+  echo "      exclusion and not for parent packages. In this case, nothing will be"
+  echo "      installed because no parent package was pointed to."
+  echo "        optional-packages --install yes --exclude bat bash lsd rust"
+  echo ""
+  echo "  - Multiple options can be used multiple times, plus core packages can be at"
+  echo "    the end."
+  echo "    - In this example, it will search for optional packages within the following"
+  echo "      core packages 'lsd kitty virtualbox bat xterm'; exclude 'python gtk3 perl'"
+  echo "      optional packages; avoid installed packages; and finally, install the"
+  echo "      packages found."
+  echo "    - Note: For options that have a single value (boolean), when the same option"
+  echo "      is entered multiple times, it will take the last option and its value. The"
+  echo "      order matters."
+  echo "    - Commands:"
+  echo "        optional-packages -s no -p lsd kitty -s yes -e python gtk3 \\"
+  echo "                          -p virtualbox -e perl -i no -i yes bat xterm"
+  echo ""
+  display_version
+  echo ""
+  echo ""
+}
+
+display_version() {
+  echo "VERSION:"
+  echo "  ${VERSION}"
+  echo ""
+  echo "  Source: https://github.com/airvzxf/archlinux-optional-packages/"
+  echo "  Author: Israel Roldan"
+  echo "    Email: israel.alberto.rv@gmail.com"
+  echo "    GitHub: @airvzxf"
+  echo "    Twitter: @IsraelAlbert_RV"
+  echo "    Website: https://www.rovisoft.net/"
+}
+
+display_version_simple() {
+  echo "${VERSION}"
+}
+
+parse_arguments() {
+  while [[ ${#} -gt 0 ]]; do
+    case "${1}" in
+      -e | --exclude)
+        # Remove this argument.
+        shift
+        local value
+        for value in "${@}"; do
+          if [[ ${value} == -* ]]; then
+            break
+          fi
+          PACKAGES_EXCLUDED+=("${1}")
+          # Remove this value.
+          shift
+        done
+        ;;
+      -h | --help)
+        display_help
+        exit 0
+        ;;
+      -i | --install)
+        # Remove this argument.
+        shift
+        INSTALL="${1}"
+        # Remove this value.
+        shift
+        ;;
+      -p | --packages)
+        # Remove this argument.
+        shift
+        local value
+        for value in "${@}"; do
+          if [[ ${value} == -* ]]; then
+            break
+          fi
+          CORE_PACKAGES+=("${1}")
+          # Remove this value.
+          shift
+        done
+        ;;
+      -s | --skip-installed)
+        # Remove this argument.
+        shift
+        SKIP_INSTALLED="${1}"
+        # Remove this value.
+        shift
+        ;;
+      -V | --version)
+        display_version
+        exit 0
+        ;;
+      --version-simple)
+        display_version_simple
+        exit 0
+        ;;
+      --* | -*)
+        echo "Unknown option ${1}."
+        echo "Review the help with this command:"
+        echo "  optional-packages -h"
+        exit 1
+        ;;
+      *)
+        # Any argument without an option must be a package.
+        CORE_PACKAGES+=("${1}")
+        # Remove past argument.
+        shift
+        ;;
+    esac
+  done
+}
+
+is_none_optional_dependencies() {
+  local package
+  package="${1}"
+
+  local optional_dependencies
+  optional_dependencies=$(
+    pacman --sync --info "${package}" |
+      grep --extended-regexp "^Optional Deps\s+:\s+None$" ||
+      return 0
+  )
+
+  if [[ -z ${optional_dependencies} ]]; then
+    # False: It has optional dependencies
+    return 1
+  fi
+
+  # True: It has none optional dependencies
+  return 0
+}
+
+search_optional_dependencies() {
+  echo "# --------------------"
+  local package
+  package="${1}"
+  echo "package: ${package}"
+
+  if [[ ${SKIP_INSTALLED} == "yes" ]]; then
+    pacman --query --info "${package}" 1> /dev/null 2>&1 && {
+      echo "Skip: ${package} is installed."
+      return 0
+    }
+  fi
+
+  local package_excluded
+  for package_excluded in "${PACKAGES_EXCLUDED[@]}"; do
+    if [[ ${package_excluded} == "${package}" ]]; then
+      echo "Skip: ${package} is excluded."
+      return 0
+    fi
+  done
+
+  local avoid_core_packages
+  avoid_core_packages="${2}"
+  if [[ -z ${avoid_core_packages} ]]; then
+    OPTIONAL_PACKAGES+=("${package}")
+  fi
+
+  if is_none_optional_dependencies "${package}"; then
+    echo "Skip: ${package} has none optional dependencies."
+    # True: Finish the function.
+    return 0
+  fi
+
+  local optional_dependencies
+  optional_dependencies=$(
+    pacman --sync --info "${package}" |
+      sed --silent '/^Optional Deps/,$p' |
+      sed '/^Conflicts/q' | head --lines -1 |
+      sed --regexp-extended 's/Optional Deps\s+:\s+//g' |
+      sed --regexp-extended 's/^\s+//g' |
+      sed --regexp-extended 's/:.*//g' |
+      tr '\n' ' ' |
+      sed --regexp-extended 's/\s+$//g' ||
+      return 0
+  )
+
+  local packages
+  read -ra packages <<< "$optional_dependencies"
+
+  local dependency
+  for dependency in "${packages[@]}"; do
+    echo "${package} ➟ ${dependency}"
+    local package_in_the_list
+    package_in_the_list=false
+
+    local package_added
+    for package_added in "${OPTIONAL_PACKAGES[@]}"; do
+      if [[ ${dependency} == "${package_added}" ]]; then
+        package_in_the_list=true
+        echo "Skip: ${package} ➟ ${dependency}. It is in the list of optional dependencies."
+        break
+      fi
+    done
+
+    if [[ ${package_in_the_list} == false ]]; then
+      search_optional_dependencies "${dependency}"
+    fi
+  done
+}
+
+set_optional_dependencies() {
+  local package
+  local -i index=1
+  for package in "${CORE_PACKAGES[@]}"; do
+    echo "# --------------------------------------"
+    echo "Core package #${index}/${#CORE_PACKAGES[@]}: ${package}"
+    search_optional_dependencies "${package}" "avoid_core_packages"
+    echo "Optional packages: |-${OPTIONAL_PACKAGES[*]}-|"
+    index+=1
+  done
+  echo "# --------------------------------------"
+  echo "Optional packages: |-${OPTIONAL_PACKAGES[*]}-|"
+}
+
+install_packages() {
+  echo "# --------------------------------------"
+  if [[ ${INSTALL} == "yes" ]]; then
+    if [[ -n ${CORE_PACKAGES[*]} ]]; then
+      # shellcheck disable=SC2048,SC2086
+      sudo pacman --sync --needed --noconfirm ${CORE_PACKAGES[*]}
+    fi
+    if [[ -n ${OPTIONAL_PACKAGES[*]} ]]; then
+      # shellcheck disable=SC2048,SC2086
+      sudo pacman --sync --asdeps --needed --noconfirm ${OPTIONAL_PACKAGES[*]}
+    fi
+  fi
+}
+
+main() {
+  parse_arguments "${@}"
+
+  echo "# ----------------------"
+  echo "CORE_PACKAGES      = ${CORE_PACKAGES[*]}"
+  echo "PACKAGES_EXCLUDED  = ${PACKAGES_EXCLUDED[*]}"
+  echo "INSTALL            = ${INSTALL}"
+  echo "SKIP_INSTALLED     = ${SKIP_INSTALLED}"
+
+  set_optional_dependencies
+
+  install_packages
+  echo "# --------------------------------------"
+}
+
+main "${@}"
