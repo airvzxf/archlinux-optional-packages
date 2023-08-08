@@ -1,7 +1,7 @@
 # ArchLinux: Optional packages
 
-It is a command-line tool to get the optional dependencies from some specific package using pacman. Furthermore,
-you can install it in your Arch Linux.
+Command-line tool that get the optional dependencies from some specific package using pacman. Furthermore, you can install
+it in your Arch Linux.
 
 ## INFORMATION
 
@@ -26,9 +26,9 @@ optional packages you found and filtered.
 |----------|------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | -e       | --exclude        | Excludes packages mentioned during a deep search.<br> - Required: no<br> - Type: string<br> - Values: package-1 package-2 …<br> - Default: none                       |
 | -h       | --help           | Display information for this command and exit.<br> - Required: no<br> - Type: none<br> - Values: none<br> - Default: none                                             |
-| -i       | --install        | Install all the packages found.<br> - Required: no<br> - Type: boolean<br> - Values: yes or no<br> - Default: no                                                      |
+| -i       | --install        | Install all the packages found.<br> - Required: no<br> - Type: boolean<br> - Values: yes \| no<br> - Default: no                                                      |
 | -p       | --packages       | The core packages from which to start the search for optional packages.<br> - Required: no<br> - Type: string<br> - Values: package-1 package-2 …<br> - Default: none |
-| -s       | --skip-installed | Skip the installed packages.<br> - Required: no<br> - Type: boolean<br> - Values: yes or no<br> - Default: no                                                         |
+| -s       | --skip-installed | Skip the installed packages.<br> - Required: no<br> - Type: boolean<br> - Values: yes \| no<br> - Default: no                                                         |
 | -v       | --version        | Display the version of this tool along with the project information and exit.<br> - Required: no<br> - Type: none<br> - Values: none<br> - Default: none              |
 |          | --version-simple | Display the version of this tool and exit.<br> - Required: no<br> - Type: none<br> - Values: none<br> - Default: none                                                 |
 
@@ -102,7 +102,7 @@ command: `yay --sync optional-packages`.
 [Directly download][raw file of this package] the [optional-packages][this package file] file and use it on your
 computer.
 
-Verify that the file has the appropriate execution permissions for your needs: `ls --long optional-packages`. You can
+Verify that the file has the appropriate execution permissions for your needs: `ls -l optional-packages`. You can
 add execute permissions to the owner user with `chmod u+x optional-packages` or to all
 with `chmod +x optional-packages`.
 
