@@ -29,7 +29,7 @@ jobs:
           ENV_PACKAGE_LICENSES: 'GPL3'
           ENV_PACKAGE_NAME: 'optional-packages'
 #          ENV_PACKAGE_PGPS: '|  63ADA633FE7468630D9BC56175530B8B9F74CF3A # PGP: Israel Roldan (airvzxf) <israel.alberto.rv@gmail.com>, https://github.com/airvzxf.gpg|'
-          ENV_PACKAGE_RELEASE: '2'
+          ENV_PACKAGE_RELEASE: '1'
           ENV_PACKAGE_SOURCES: ''
           ENV_PACKAGE_SOURCE_GITHUB: 'true'
           ENV_SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
