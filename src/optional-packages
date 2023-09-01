@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set +xve
 
-VERSION="v1.0.2"
+VERSION="v1.0.3"
 INSTALL="no"
 SKIP_INSTALLED="no"
 declare -a CORE_PACKAGES=()
